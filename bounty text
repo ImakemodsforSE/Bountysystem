@@ -1,0 +1,87 @@
+using Sandbox.ModAPI;
+using VRage.Game.ModAPI.Ingame;
+using VRageMath;
+
+public class BountySystem : MySessionComponentBase
+{
+    private const double DefaultBounty = 0;
+    private readonly Dictionary<long, double> _playerBounties = new Dictionary<long, double>();
+    private readonly double _bountyThreshold = 1000;
+
+    public override void LoadData()
+    {
+        MyAPIGateway.Session.OnPlayerHurt += OnPlayerHurt;
+        MyAPIGateway.Session.OnPlayerKilled += OnPlayerKilled;
+    }
+
+    private void OnPlayerHurt(IMyPlayer attacker, IMyEntity victim, MyDamageInformation damageInfo)
+    {
+        if (attacker != null && victim is IMyPlayer)
+        {
+            long attackerId = attacker.IdentityId;
+            double bountyIncrement = 100; // Adjust the bounty increment as needed
+
+            // Increment the bounty for the attacker
+            if (_playerBounties.ContainsKey(attackerId))
+            {
+                _playerBounties[attackerId] += bountyIncrement;
+            }
+            else
+            {
+                _playerBounties[attackerId] = bountyIncrement;
+            }
+
+            // Display a notification to the attacker
+            DisplayBountyNotification(attacker, bountyIncrement);
+        }
+    }
+
+    private void OnPlayerKilled(long attackerId, long victimId)
+    {
+        if (_playerBounties.ContainsKey(attackerId))
+        {
+            double bountyAmount = _playerBounties[attackerId];
+
+            // Check if the bounty exceeds the threshold and apply consequences
+            if (bountyAmount >= _bountyThreshold)
+            {
+                ApplyConsequences(attackerId);
+
+                // Add credits to the attacker's inventory
+                AddCreditsToInventory(attackerId, bountyAmount);
+
+                // Reset the bounty after the consequences are applied
+                _playerBounties[attackerId] = DefaultBounty;
+            }
+        }
+    }
+
+    private void ApplyConsequences(long playerId)
+    {
+        // Replace this with your logic to apply consequences
+        IMyPlayer player = MyAPIGateway.Players.GetPlayerById(playerId);
+        if (player != null)
+        {
+            // Example: player.SendChatMessage("You have a high bounty and face consequences!");
+        }
+    }
+
+    private void AddCreditsToInventory(long playerId, double credits)
+    {
+        // Replace this with your logic to add credits to the player's inventory
+        IMyPlayer player = MyAPIGateway.Players.GetPlayerById(playerId);
+        if (player != null)
+        {
+            MyAPIGateway.Utilities.ShowNotification($"Bounty Claimed: {credits} Space Credits Added to Inventory", 5000, MyFontEnum.Green, playerId);
+            // Add credits to the player's inventory here
+            // Example: player.AddCredits(credits);
+        }
+    }
+
+    private void DisplayBountyNotification(IMyPlayer player, double bountyIncrement)
+    {
+        // Replace this with your notification logic
+        string notificationText = $"Bounty Added: {bountyIncrement} Space Credits";
+        MyAPIGateway.Utilities.ShowNotification(notificationText, 5000, MyFontEnum.Green, player.IdentityId);
+    }
+}
