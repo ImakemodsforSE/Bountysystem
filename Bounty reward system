@@ -1,0 +1,109 @@
+using System.Collections.Generic;
+using Sandbox.ModAPI;
+using VRage.Game.ModAPI;
+using VRage.Game.ModAPI.Ingame;
+using VRageMath;
+
+public class BountySystem : MySessionComponentBase
+{
+    private const double DefaultBounty = 0;
+    private readonly Dictionary<long, double> _playerBounties = new Dictionary<long, double>();
+    private readonly double _bountyThreshold = 1000;
+    private readonly double _bountyReward = 500; // Adjust the reward amount as needed
+
+    public override void LoadData()
+    {
+        MyAPIGateway.Session.OnPlayerKilled += OnPlayerKilled;
+        MyAPIGateway.Session.OnSessionReady += OnSessionReady;
+
+        // Register the update method to run periodically
+        MyAPIGateway.Utilities.InvokeOnGameThread(() => MyAPIGateway.Utilities.GetGame().GameSession.OnSessionReady += UpdateLoop);
+    }
+
+    private void OnSessionReady()
+    {
+        // Initialize or load player bounties from storage
+    }
+
+    private void UpdateLoop()
+    {
+        // Periodically check and update bounties or perform other actions
+        // Example: Check bounties every 10 seconds
+        MyAPIGateway.Utilities.InvokeOnGameThread(() => MyAPIGateway.Utilities.GetGame().GameSession.OnSessionReady += UpdateLoop, 10000);
+
+        // Add any additional logic here
+    }
+
+    private void OnPlayerKilled(long attackerId, long victimId)
+    {
+        // Example: Increment the bounty of the attacker when they kill another player
+        if (_playerBounties.ContainsKey(attackerId))
+        {
+            _playerBounties[attackerId] += 100; // Adjust bounty increment as needed
+        }
+        else
+        {
+            _playerBounties[attackerId] = 100;
+        }
+
+        // Example: Check if the bounty exceeds the threshold and apply consequences
+        if (_playerBounties[attackerId] >= _bountyThreshold)
+        {
+            ApplyConsequences(attackerId);
+        }
+
+        // Save player bounties to storage
+        SavePlayerBounties();
+
+        // Reward the killer with credits if the victim had a bounty
+        if (HasBounty(victimId))
+        {
+            RewardKiller(attackerId);
+        }
+    }
+
+    private void ApplyConsequences(long playerId)
+    {
+        // Example: Deny access or apply penalties
+        IMyPlayer player = MyAPIGateway.Players.GetPlayerById(playerId);
+        if (player != null)
+        {
+            // Replace this with your logic to deny access or apply penalties
+            // Example: player.SendChatMessage("You have a high bounty and face consequences!");
+        }
+    }
+
+    private void SavePlayerBounties()
+    {
+        // Save player bounties to storage (file, database, etc.)
+    }
+
+    private bool HasBounty(long playerId)
+    {
+        // Implement logic to check if the player has a bounty
+        double playerBounty = GetPlayerBounty(playerId);
+        return playerBounty >= _bountyThreshold;
+    }
+
+    private double GetPlayerBounty(long playerId)
+    {
+        // Replace this with your logic to get the player's bounty
+        // Example: Retrieve the bounty from your storage or system
+        // You might use a dictionary or another method to track bounties
+        return _playerBounties.ContainsKey(playerId) ? _playerBounties[playerId] : DefaultBounty;
+    }
+
+    private void RewardKiller(long killerId)
+    {
+        // Replace this with your logic to reward the killer with credits
+        // Example: You might use your own credit system or modify player's balance
+        // This is a simplified example, and you may need to implement your credit system
+        AddCreditsToPlayer(killerId, _bountyReward);
+    }
+
+    private void AddCreditsToPlayer(long playerId, double amount)
+    {
+        // Replace this with your logic to add credits to the player
+        // Example: You might use your own credit system or modify player's balance
+    }
+}
